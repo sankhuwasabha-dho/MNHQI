@@ -139,6 +139,10 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .score-badge.green { background: var(--green); }
 .score-badge.yellow { background: var(--yellow); }
 .score-badge.red { background: var(--red); }
+.badge-stack { display: flex; gap: 12px; flex-wrap: wrap; }
+.badge-cap { font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; opacity: .9; margin-bottom: 4px; }
+.part-score { font-weight: 700; font-size: .8rem; margin-left: 8px; vertical-align: middle; }
+h2.section .chip { vertical-align: middle; }
 
 /* Domain bar list */
 .dombar { display: grid; grid-template-columns: 220px 1fr 56px 116px; align-items: center; gap: 10px; margin: 6px 0; padding: 5px 8px; border-radius: 8px; font-size: .82rem; border-left: 4px solid transparent; }

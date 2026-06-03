@@ -384,11 +384,24 @@ function renderScorecard() {
         <div><b>Assessors</b><br>${r.assessors.length ? r.assessors.map(esc).join("; ") : "—"}</div>
       </div>
     </div>
-    <div class="score-badge ${r.status}">
-      <div class="big">${r.total}<span style="font-size:1rem">/92</span></div>
-      <div class="pct">${Math.round(r.totalPct * 100)}%</div>
-      <div class="lbl">${statusLabel(r.status)}</div>
+    <div class="badge-stack">
+      <div class="score-badge ${r.status}">
+        <div class="badge-cap">Part A · Quality</div>
+        <div class="big">${r.total}<span style="font-size:1rem">/92</span></div>
+        <div class="pct">${Math.round(r.totalPct * 100)}%</div>
+        <div class="lbl">${statusLabel(r.status)}</div>
+      </div>
+      <div class="score-badge ${r.sfStatus}">
+        <div class="badge-cap">Part B · BEONC</div>
+        <div class="big">${r.sfTotal}<span style="font-size:1rem">/22</span></div>
+        <div class="pct">${Math.round((r.sfTotal / SF_TOTAL_MAX) * 100)}%</div>
+        <div class="lbl">${r.sfs.filter((f) => f.status === "green").length}/7 functions</div>
+      </div>
     </div>`;
+
+  // part-level score on the section headings
+  $("#sc-partA-score").innerHTML = `<span class="chip ${r.status}">${r.total} / 92 · ${Math.round(r.totalPct * 100)}%</span>`;
+  $("#sc-partB-score").innerHTML = `<span class="chip ${r.sfStatus}">${r.sfTotal} / 22</span>`;
 
   // domain bars — colour-coded by traffic-light status (green / yellow / red)
   $("#sc-domains").innerHTML = r.domains.map((d) => `
