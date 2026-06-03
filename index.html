@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MNH QI Dashboard</title>
+
+  <!-- Leaflet (map) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app">
+    <div class="row">
+      <div>
+        <h1>MNH Readiness QI Dashboard</h1>
+        <div class="sub">Maternal &amp; Newborn Health Quality Improvement — Birthing Centres</div>
+      </div>
+      <div class="spacer"></div>
+      <div class="status-line" id="status-line">Loading…</div>
+      <button class="refresh" id="btn-refresh">↻ Refresh</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <a href="#portfolio" data-view="portfolio" class="active">Portfolio</a>
+    <a href="#scorecard" data-view="scorecard">Facility scorecard</a>
+    <a href="#trends" data-view="trends">Trends</a>
+    <a href="#service" data-view="service">Service data</a>
+  </nav>
+
+  <main>
+    <!-- Shared filters -->
+    <div class="panel filters">
+      <div class="field"><label>District</label><select id="f-district"></select></div>
+      <div class="field"><label>Local level (Palika)</label><select id="f-palika"></select></div>
+      <div class="field"><label>Facility type</label><select id="f-type"></select></div>
+      <div class="field"><label>Assessment #</label><select id="f-assessment"></select></div>
+      <button class="clear" id="f-clear">Clear filters</button>
+    </div>
+
+    <!-- VIEW: PORTFOLIO -->
+    <section class="view active" id="view-portfolio">
+      <div class="kpis" id="kpis"></div>
+      <div class="grid-2">
+        <div class="panel">
+          <h2 class="section">All assessments</h2>
+          <div id="portfolio-table"></div>
+        </div>
+        <div class="panel">
+          <h2 class="section">Facility map</h2>
+          <div id="map"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: SCORECARD -->
+    <section class="view" id="view-scorecard">
+      <div class="picker">
+        <div class="field" style="display:flex;flex-direction:column;gap:4px">
+          <label class="muted" style="font-size:.72rem;font-weight:600;text-transform:uppercase">Select facility &amp; assessment</label>
+          <select id="sc-picker"></select>
+        </div>
+      </div>
+      <div class="panel facility-head" id="sc-head"></div>
+      <div class="grid-2">
+        <div class="panel">
+          <h2 class="section">Part A — Domain scorecard</h2>
+          <div id="sc-domains"></div>
+        </div>
+        <div class="panel">
+          <h2 class="section">Domain profile</h2>
+          <div class="chart-wrap tall"><canvas id="scRadar"></canvas></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2 class="section">Part B — BEONC signal functions</h2>
+        <div class="sf-grid" id="sc-sf"></div>
+        <div style="margin-top:12px" id="sc-sf-total"></div>
+      </div>
+      <div class="panel">
+        <h2 class="section">Part C — Monthly service data</h2>
+        <div class="muted" id="sc-partc-month" style="margin-bottom:10px"></div>
+        <div class="statgrid" id="sc-partc"></div>
+      </div>
+      <div class="panel">
+        <h2 class="section">Action plan</h2>
+        <div id="sc-actions"></div>
+      </div>
+    </section>
+
+    <!-- VIEW: TRENDS -->
+    <section class="view" id="view-trends">
+      <div class="picker">
+        <div class="field" style="display:flex;flex-direction:column;gap:4px">
+          <label class="muted" style="font-size:.72rem;font-weight:600;text-transform:uppercase">Select facility</label>
+          <select id="tr-picker"></select>
+        </div>
+      </div>
+      <div id="tr-note"></div>
+      <div class="grid-2">
+        <div class="panel">
+          <h2 class="section">Overall quality over time</h2>
+          <div class="chart-wrap"><canvas id="trTotal"></canvas></div>
+        </div>
+        <div class="panel">
+          <h2 class="section">Domain scores by assessment</h2>
+          <div class="chart-wrap"><canvas id="trDomains"></canvas></div>
+        </div>
+      </div>
+      <div class="panel" id="tr-deltas"></div>
+    </section>
+
+    <!-- VIEW: SERVICE DATA & OUTCOMES (Part C) -->
+    <section class="view" id="view-service">
+      <div class="empty" id="svc-empty" style="display:none">No service data recorded for the current filters.</div>
+      <div id="svc-body">
+        <div id="svc-note"></div>
+        <div class="kpis" id="svc-kpis"></div>
+        <div class="grid-2">
+          <div class="panel">
+            <h2 class="section">Delivery types</h2>
+            <div class="chart-wrap"><canvas id="svcDelivery"></canvas></div>
+          </div>
+          <div class="panel">
+            <h2 class="section">Obstetric complications managed</h2>
+            <div class="chart-wrap"><canvas id="svcComplications"></canvas></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h2 class="section">Deliveries by facility</h2>
+          <div class="chart-wrap"><canvas id="svcByFacility"></canvas></div>
+        </div>
+        <div class="panel">
+          <h2 class="section">Adverse outcomes (totals across selected facilities)</h2>
+          <div class="statgrid" id="svc-outcomes"></div>
+        </div>
+        <div class="panel">
+          <h2 class="section">Service data by facility</h2>
+          <div id="svc-table"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Libraries -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- App -->
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
