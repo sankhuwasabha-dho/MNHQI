@@ -285,7 +285,7 @@ function renderPortfolioTable(rows) {
   const head = cols.map((c) =>
     `<th class="sortable ${c.num ? "num" : ""}" data-k="${c.k}">${c.t}${sortKey === c.k ? (sortDir < 0 ? " ▼" : " ▲") : ""}</th>`).join("");
   const body = sorted.map((r, i) => `
-    <tr class="clickable" data-idx="${STATE.rows.indexOf(r)}">
+    <tr class="clickable" tabindex="0" role="button" aria-label="Open scorecard for ${esc(r.facility_name)}" data-idx="${STATE.rows.indexOf(r)}">
       <td>${esc(r.facility_name)}</td>
       <td>${esc(r.district)}</td>
       <td>${esc(r.facility_type_label)}</td>
@@ -306,9 +306,12 @@ function renderPortfolioTable(rows) {
     if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = (k === "facility_name" || k === "district") ? 1 : -1; }
     renderPortfolioTable(rows);
   }));
-  $$("#portfolio-table tr.clickable").forEach((tr) => tr.addEventListener("click", () => {
-    openScorecard(parseInt(tr.dataset.idx, 10));
-  }));
+  $$("#portfolio-table tr.clickable").forEach((tr) => {
+    tr.addEventListener("click", () => openScorecard(parseInt(tr.dataset.idx, 10)));
+    tr.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openScorecard(parseInt(tr.dataset.idx, 10)); }
+    });
+  });
 }
 
 let mapObj = null, mapLayer = null;
