@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MNH QI Dashboard</title>
+  <title>Health Office, Sankhuwasabha — MNHQI Dashboard</title>
+  <link rel="icon" type="image/png" href="nepal-emblem.png" />
+
+  <!-- Type: Noto Sans (Latin) + Noto Sans Devanagari, for the office letterhead -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Leaflet (map) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -13,9 +19,13 @@
 <body>
   <header class="app">
     <div class="row">
-      <div>
-        <h1>MNH Readiness QI Dashboard</h1>
-        <div class="sub">Maternal &amp; Newborn Health Quality Improvement — Birthing Centres</div>
+      <img class="emblem" src="nepal-emblem.png" alt="Coat of arms of Nepal" width="56" height="56" />
+      <div class="office-id">
+        <div class="office-tier">कोशी प्रदेश सरकार</div>
+        <div class="office-tier">स्वास्थ्य मन्त्रालय · स्वास्थ्य निर्देशनालय</div>
+        <h1>स्वास्थ्य कार्यालय संखुवासभा</h1>
+        <div class="office-loc">खाँदबारी, संखुवासभा</div>
+        <div class="sub">MNHQI Dashboard — Maternal &amp; Newborn Health Quality Improvement, Birthing Centres</div>
       </div>
       <div class="spacer"></div>
       <div class="status-line" id="status-line">Loading…</div>
@@ -58,8 +68,8 @@
     <!-- VIEW: SCORECARD -->
     <section class="view" id="view-scorecard">
       <div class="picker">
-        <div class="field" style="display:flex;flex-direction:column;gap:4px">
-          <label class="muted" style="font-size:.72rem;font-weight:600;text-transform:uppercase">Select facility &amp; assessment</label>
+        <div class="field field-stack">
+          <label class="muted micro-label">Select facility &amp; assessment</label>
           <select id="sc-picker"></select>
         </div>
       </div>
@@ -93,8 +103,8 @@
     <!-- VIEW: TRENDS -->
     <section class="view" id="view-trends">
       <div class="picker">
-        <div class="field" style="display:flex;flex-direction:column;gap:4px">
-          <label class="muted" style="font-size:.72rem;font-weight:600;text-transform:uppercase">Select facility</label>
+        <div class="field field-stack">
+          <label class="muted micro-label">Select facility</label>
           <select id="tr-picker"></select>
         </div>
       </div>

@@ -5,6 +5,8 @@
   --green: #1aab57;
   --green-bg: #e6f7ee;
   --yellow: #e0a106;
+  --yellow-ink: #8a6403;
+  --yellow-strong: #b8790a;
   --yellow-bg: #fdf4dc;
   --red: #e23b3b;
   --red-bg: #fce8e8;
@@ -13,8 +15,8 @@
   --line: #e3e8ef;
   --panel: #ffffff;
   --bg: #f4f6fa;
-  --brand: #15489e;
-  --brand-2: #2f6fd0;
+  --brand: #1b4c73;
+  --brand-2: #2e6f9e;
   --shadow: 0 1px 3px rgba(16, 38, 73, .08), 0 4px 16px rgba(16, 38, 73, .06);
   --radius: 12px;
 }
@@ -22,24 +24,36 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 body {
-  font-family: "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
+  font-family: "Noto Sans", "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
   color: var(--ink);
   background: var(--bg);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.45;
 }
 a { color: var(--brand-2); }
 
-/* ---------- Header ---------- */
+/* Visible keyboard focus everywhere interactive */
+a:focus-visible, button:focus-visible, select:focus-visible,
+[tabindex]:focus-visible, tr.clickable:focus-visible {
+  outline: 2.5px solid var(--brand-2);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- Header (office letterhead) ---------- */
 header.app {
-  background: linear-gradient(120deg, var(--brand), var(--brand-2));
+  background: var(--brand);
   color: #fff;
-  padding: 16px 24px;
+  padding: 14px 24px;
   box-shadow: var(--shadow);
 }
 header.app .row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-header.app h1 { font-size: 1.2rem; margin: 0; font-weight: 700; }
-header.app .sub { font-size: .8rem; opacity: .85; margin-top: 2px; }
+header.app .emblem { flex: none; width: 56px; height: 56px; object-fit: contain; }
+.office-id { font-family: "Noto Sans Devanagari", "Noto Sans", sans-serif; }
+.office-tier { font-size: .68rem; line-height: 1.35; color: rgba(255,255,255,.82); font-weight: 500; }
+header.app h1 { font-size: 1.12rem; margin: 2px 0 1px; font-weight: 700; color: #fff; }
+.office-loc { font-size: .74rem; color: rgba(255,255,255,.8); margin-bottom: 3px; }
+header.app .sub { font-family: "Noto Sans", sans-serif; font-size: .78rem; opacity: .88; margin-top: 2px; }
 header.app .spacer { flex: 1; }
 .status-line { font-size: .78rem; opacity: .9; }
 button.refresh {
@@ -77,6 +91,8 @@ h3.sub { font-size: .92rem; margin: 22px 0 10px; color: var(--muted); text-trans
 .filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
 .filters .field { display: flex; flex-direction: column; gap: 4px; }
 .filters label { font-size: .72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+.field-stack { display: flex; flex-direction: column; gap: 4px; }
+.micro-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; }
 .filters select {
   padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff;
   font-size: .85rem; min-width: 150px;
@@ -92,11 +108,15 @@ h3.sub { font-size: .92rem; margin: 22px 0 10px; color: var(--muted); text-trans
 .kpi .val { font-size: 1.8rem; font-weight: 800; line-height: 1; }
 .kpi .lbl { font-size: .76rem; color: var(--muted); margin-top: 6px; text-transform: uppercase; letter-spacing: .03em; }
 .kpi.green .val { color: var(--green); }
-.kpi.yellow .val { color: var(--yellow); }
+.kpi.yellow .val { color: var(--yellow-ink); }
 .kpi.red .val { color: var(--red); }
 
 /* ---------- Tables ---------- */
+/* Wide tables scroll inside their own container instead of breaking the page. */
+#portfolio-table, #svc-table, #sc-actions, #tr-deltas { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+#portfolio-table table { min-width: 640px; }
+#portfolio-table td:first-child, #portfolio-table th:first-child { min-width: 180px; }
 th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid var(--line); }
 th { font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); cursor: pointer; user-select: none; white-space: nowrap; }
 th.sortable:hover { color: var(--brand); }
@@ -137,7 +157,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .score-badge .pct { font-size: .95rem; opacity: .95; }
 .score-badge .lbl { font-size: .75rem; opacity: .9; margin-top: 4px; }
 .score-badge.green { background: var(--green); }
-.score-badge.yellow { background: var(--yellow); }
+.score-badge.yellow { background: var(--yellow-strong); }
 .score-badge.red { background: var(--red); }
 .badge-stack { display: flex; gap: 12px; flex-wrap: wrap; }
 .badge-cap { font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; opacity: .9; margin-bottom: 4px; }
