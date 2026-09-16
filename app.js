@@ -93,7 +93,9 @@ const PARTC_LABELS = [
 const STATE = { rows: [], filtered: [], lastUpdated: null };
 const charts = {}; // keep refs so we can destroy before re-render
 
-const COLOR = { green: "#1aab57", yellow: "#e0a106", red: "#e23b3b" };
+// Mirrors the tokens in styles.css (canvas charts and map markers can't read CSS variables).
+const COLOR = { green: "#178A4C", yellow: "#C98A07", red: "#C4312E", neutral: "#5B6878" };
+const BLUE = { deep: "#0B3A78", mid: "#4F76A8", light: "#9FB6D6", wash: "rgba(11,58,120,.12)" };
 
 /* ----------------------------------------------------------------------------
  * 3. HELPERS
@@ -107,6 +109,25 @@ const norm = (s) => String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
 
 function statusFromPct(pct) { return pct >= 0.85 ? "green" : pct >= 0.6 ? "yellow" : "red"; }
 function statusLabel(s) { return s === "green" ? "Good" : s === "yellow" ? "Needs attention" : "Urgent"; }
+
+function stripSummary(domains) {
+  const n = (s) => domains.filter((d) => d.status === s).length;
+  return `Domains: ${n("green")} good, ${n("yellow")} need attention, ${n("red")} urgent`;
+}
+
+function readinessStrip(domains) {
+  const cells = domains.map((d) =>
+    `<i class="${d.status}" title="${esc(d.short)}: ${d.score}/${d.max}"></i>`).join("");
+  return `<span class="strip" role="img" aria-label="${stripSummary(domains)}">${cells}</span>`;
+}
+
+function readinessStripLarge(domains) {
+  const cells = domains.map((d, i) => `
+    <span class="cell" title="${esc(d.short)}: ${d.score}/${d.max} — ${statusLabel(d.status)}">
+      <i class="${d.status}" style="--n:${i}"></i><b>${d.id.toUpperCase()}</b>
+    </span>`).join("");
+  return `<div class="strip strip-lg" role="img" aria-label="${stripSummary(domains)}">${cells}</div>`;
+}
 
 /* ----------------------------------------------------------------------------
  * 4. COMPUTE — derive all scores for one submission row
@@ -215,6 +236,7 @@ function populateFilter(id, values, current) {
 }
 
 function initFilters() {
+  if (window.matchMedia("(max-width: 720px)").matches) $("#filters").open = false;
   ["f-district", "f-palika", "f-type", "f-assessment"].forEach((id) =>
     $("#" + id).addEventListener("change", () => { applyFilters(); renderCurrentView(); }));
   $("#f-clear").addEventListener("click", () => {
@@ -234,6 +256,8 @@ function applyFilters() {
   STATE.filtered = STATE.rows.filter((r) =>
     (!fd || r.district === fd) && (!fp || r.palika === fp) &&
     (!ft || r.facility_type === ft) && (!fa || r.assessment_no === fa));
+  const active = [fd, fp, ft, fa].filter(Boolean).length;
+  $("#filter-count").textContent = active ? `${active} active` : "";
 }
 
 // type filter shows label not code
@@ -252,10 +276,8 @@ function renderCurrentView() {
   const v = currentView();
   $$("nav.tabs a").forEach((a) => a.classList.toggle("active", a.dataset.view === v));
   $$(".view").forEach((el) => el.classList.toggle("active", el.id === "view-" + v));
-  if (!STATE.rows.length) {
-    $("#portfolio-table").innerHTML = `<div class="empty">No assessments submitted for this district yet.</div>`;
-    return;
-  }
+  document.body.classList.toggle("no-data", Boolean(STATE.lastUpdated) && !STATE.rows.length);
+  if (!STATE.rows.length) return;
   decorateTypeFilter();
   ({ portfolio: renderPortfolio, scorecard: renderScorecard, trends: renderTrends, service: renderService }[v])();
 }
@@ -275,10 +297,10 @@ function renderPortfolio() {
   $("#kpis").innerHTML = `
     <div class="kpi"><div class="val">${facilities}</div><div class="lbl">Facilities</div></div>
     <div class="kpi"><div class="val">${rows.length}</div><div class="lbl">Assessments</div></div>
-    <div class="kpi ${statusFromPct(avgPct)}"><div class="val">${Math.round(avgPct * 100)}%</div><div class="lbl">Avg quality score</div></div>
-    <div class="kpi green"><div class="val">${counts.green}</div><div class="lbl">Good (green)</div></div>
-    <div class="kpi yellow"><div class="val">${counts.yellow}</div><div class="lbl">Needs attention</div></div>
-    <div class="kpi red"><div class="val">${counts.red}</div><div class="lbl">Urgent (red)</div></div>`;
+    <div class="kpi"><div class="val">${Math.round(avgPct * 100)}%</div><div class="lbl">Average quality score</div></div>
+    <div class="kpi green"><div class="val">${counts.green}</div><div class="lbl">Good</div></div>
+    <div class="kpi yellow"><div class="val">${counts.yellow}</div><div class="lbl">Need attention</div></div>
+    <div class="kpi red"><div class="val">${counts.red}</div><div class="lbl">Urgent</div></div>`;
 
   renderPortfolioTable(rows);
   renderMap(rows);
@@ -288,13 +310,10 @@ function renderPortfolioTable(rows) {
   const cols = [
     { k: "facility_name", t: "Facility", num: false },
     { k: "district", t: "District", num: false },
-    { k: "facility_type_label", t: "Type", num: false },
-    { k: "assessment_no", t: "Assess #", num: true },
-    { k: "assessment_date", t: "Date", num: false },
-    { k: "sfTotal", t: "BEONC /22", num: true },
-    { k: "total", t: "Score /92", num: true },
-    { k: "totalPct", t: "%", num: true },
-    { k: "status", t: "Status", num: false },
+    { k: null, t: "Domains D1–D13", num: false },
+    { k: "sfTotal", t: "BEONC", num: true },
+    { k: "total", t: "Score", num: true },
+    { k: "totalPct", t: "Status", num: false },
   ];
   const sorted = [...rows].sort((a, b) => {
     let x = a[sortKey], y = b[sortKey];
@@ -302,20 +321,23 @@ function renderPortfolioTable(rows) {
     return x < y ? -1 * sortDir : x > y ? 1 * sortDir : 0;
   });
 
-  const head = cols.map((c) =>
-    `<th class="sortable ${c.num ? "num" : ""}" data-k="${c.k}">${c.t}${sortKey === c.k ? (sortDir < 0 ? " ▼" : " ▲") : ""}</th>`).join("");
-  const body = sorted.map((r, i) => `
+  const head = cols.map((c) => c.k
+    ? `<th class="sortable ${c.num ? "num" : ""}" data-k="${c.k}">${c.t}${sortKey === c.k ? (sortDir < 0 ? " ▼" : " ▲") : ""}</th>`
+    : `<th>${c.t}</th>`).join("");
+  const body = sorted.map((r) => {
+    const sub = [r.facility_type_label, r.assessment_no && `Assessment ${r.assessment_no}`, r.assessment_date]
+      .filter(Boolean).map((s) => `<span>${esc(s)}</span>`).join(" · ");
+    return `
     <tr class="clickable" tabindex="0" role="button" aria-label="Open scorecard for ${esc(r.facility_name)}" data-idx="${STATE.rows.indexOf(r)}">
-      <td>${esc(r.facility_name)}</td>
-      <td>${esc(r.district)}</td>
-      <td>${esc(r.facility_type_label)}</td>
-      <td class="num">${esc(r.assessment_no)}</td>
-      <td>${esc(r.assessment_date)}</td>
-      <td class="num">${r.sfTotal}</td>
-      <td class="num">${r.total}</td>
-      <td class="num">${Math.round(r.totalPct * 100)}%</td>
-      <td><span class="chip ${r.status}">${statusLabel(r.status)}</span></td>
-    </tr>`).join("");
+      <td class="c-name"><div class="fac-name">${esc(r.facility_name)}</div>
+        <div class="fac-sub"><span class="sub-district">${esc(r.district)} · </span>${sub}</div></td>
+      <td class="c-district">${esc(r.district)}</td>
+      <td class="c-strip">${readinessStrip(r.domains)}</td>
+      <td class="num c-beonc" data-label="BEONC">${r.sfTotal}<small>/22</small></td>
+      <td class="num c-score" data-label="Score">${r.total}<small>/92</small><span class="pct">${Math.round(r.totalPct * 100)}%</span></td>
+      <td class="c-status"><span class="chip ${r.status}">${statusLabel(r.status)}</span></td>
+    </tr>`;
+  }).join("");
 
   $("#portfolio-table").innerHTML = rows.length
     ? `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`
@@ -402,24 +424,33 @@ function renderScorecard() {
       <h2>${esc(r.facility_name)}</h2>
       <div class="muted">${esc(r.facility_type_label)} · ${esc(r.district)}${r.palika ? " · " + esc(r.palika) : ""}</div>
       <div class="meta-grid">
-        <div><b>Assessment</b><br>${esc(r.assessment_no || "—")}</div>
-        <div><b>Date</b><br>${esc(r.assessment_date || "—")}</div>
-        <div><b>Assessors</b><br>${r.assessors.length ? r.assessors.map(esc).join("; ") : "—"}</div>
+        <div><b>Assessment</b>${esc(r.assessment_no || "—")}</div>
+        <div><b>Date</b>${esc(r.assessment_date || "—")}</div>
+        <div><b>Assessors</b>${r.assessors.length ? r.assessors.map(esc).join("; ") : "—"}</div>
       </div>
     </div>
     <div class="badge-stack">
       <div class="score-badge ${r.status}">
         <div class="badge-cap">Part A · Quality</div>
-        <div class="big">${r.total}<span style="font-size:1rem">/92</span></div>
+        <div class="big">${r.total}<small>/92</small></div>
         <div class="pct">${Math.round(r.totalPct * 100)}%</div>
         <div class="lbl">${statusLabel(r.status)}</div>
       </div>
       <div class="score-badge ${r.sfStatus}">
         <div class="badge-cap">Part B · BEONC</div>
-        <div class="big">${r.sfTotal}<span style="font-size:1rem">/22</span></div>
+        <div class="big">${r.sfTotal}<small>/22</small></div>
         <div class="pct">${Math.round((r.sfTotal / SF_TOTAL_MAX) * 100)}%</div>
-        <div class="lbl">${r.sfs.filter((f) => f.status === "green").length}/7 functions</div>
+        <div class="lbl">${r.sfs.filter((f) => f.status === "green").length} of 7 functions ready</div>
       </div>
+    </div>
+    <div class="head-strip">
+      <div class="head-strip-cap">
+        <h3 class="sub">Readiness by domain</h3>
+        <div class="strip-legend" aria-hidden="true">
+          <span><i class="dot green"></i>Good</span><span><i class="dot yellow"></i>Needs attention</span><span><i class="dot red"></i>Urgent</span>
+        </div>
+      </div>
+      ${readinessStripLarge(r.domains)}
     </div>`;
 
   // part-level score on the section headings
@@ -429,7 +460,7 @@ function renderScorecard() {
   // domain bars — colour-coded by traffic-light status (green / yellow / red)
   $("#sc-domains").innerHTML = r.domains.map((d) => `
     <div class="dombar ${d.status}">
-      <span>${esc(d.short)}</span>
+      <span class="d-label">${esc(d.short)}</span>
       <span class="track"><span class="fill ${d.status}" style="width:${Math.round(d.pct * 100)}%"></span></span>
       <span class="sc">${d.score}/${d.max}</span>
       <span class="chip ${d.status}">${statusLabel(d.status)}</span>
@@ -439,7 +470,7 @@ function renderScorecard() {
   drawChart("scRadar", "radar", {
     labels: r.domains.map((d) => d.short.replace(/^D\d+ — /, "")),
     datasets: [{ label: "Domain %", data: r.domains.map((d) => Math.round(d.pct * 100)),
-      fill: true, backgroundColor: "rgba(47,111,208,.18)", borderColor: "#2f6fd0", pointBackgroundColor: "#2f6fd0" }],
+      fill: true, backgroundColor: BLUE.wash, borderColor: BLUE.deep, pointBackgroundColor: BLUE.deep }],
   }, { scales: { r: { suggestedMin: 0, suggestedMax: 100, ticks: { stepSize: 25 } } }, plugins: { legend: { display: false } } });
 
   // signal functions
@@ -451,7 +482,7 @@ function renderScorecard() {
   const redCount = r.sfs.filter((f) => f.status === "red").length;
   $("#sc-sf-total").innerHTML =
     `<span class="chip ${r.sfStatus}">BEONC total ${r.sfTotal}/22</span>` +
-    (redCount >= 4 ? `<div class="warn">⚠️ ${redCount} of 7 signal functions are RED — this facility cannot currently provide full BEONC emergency obstetric care. Urgent action required.</div>` : "");
+    (redCount >= 4 ? `<div class="warn">${redCount} of 7 signal functions are not ready. This facility cannot currently provide full BEONC emergency obstetric care and needs urgent action.</div>` : "");
 
   // part C
   $("#sc-partc").innerHTML = PARTC_LABELS.map(([k, label]) => {
@@ -479,7 +510,7 @@ function renderTrends() {
   const byKey = groupByFacility(STATE.rows);
   const key = $("#tr-picker").value || Object.keys(byKey)[0];
   const g = byKey[key];
-  if (!g) { $("#tr-body").innerHTML = `<div class="empty">No facility selected.</div>`; return; }
+  if (!g) { $("#tr-note").innerHTML = `<div class="note-banner">Select a facility to see its trend.</div>`; return; }
 
   if (g.rows.length < 2) {
     $("#tr-note").innerHTML = `<div class="note-banner">Only ${g.rows.length} assessment recorded for <b>${esc(g.name)}</b>. ` +
@@ -494,8 +525,8 @@ function renderTrends() {
   drawChart("trTotal", "line", {
     labels,
     datasets: [{ label: "Overall quality %", data: g.rows.map((r) => Math.round(r.totalPct * 100)),
-      borderColor: "#15489e", backgroundColor: "rgba(21,72,158,.12)", fill: true, tension: .25,
-      pointRadius: 5, pointBackgroundColor: "#15489e" }],
+      borderColor: BLUE.deep, backgroundColor: BLUE.wash, fill: true, tension: .25,
+      pointRadius: 5, pointBackgroundColor: BLUE.deep }],
   }, { scales: { y: { suggestedMin: 0, suggestedMax: 100 } }, plugins: { legend: { display: false } } });
 
   // grouped bar: each domain % per assessment
@@ -504,7 +535,7 @@ function renderTrends() {
     datasets: g.rows.map((r, i) => ({
       label: labels[i],
       data: r.domains.map((d) => Math.round(d.pct * 100)),
-      backgroundColor: ["#9db8e8", "#2f6fd0", "#15489e"][i] || "#0c2d63",
+      backgroundColor: [BLUE.light, BLUE.mid, BLUE.deep][i] || BLUE.deep,
     })),
   }, { scales: { y: { suggestedMin: 0, suggestedMax: 100 } } });
 
@@ -520,9 +551,9 @@ function renderTrends() {
     <table><thead><tr><th>Domain</th><th class="num">First</th><th class="num">Latest</th><th class="num">Δ</th></tr></thead>
     <tbody>
       ${deltas.map((d) => `<tr><td>${esc(d.name)}</td><td class="num">${d.from}/${d.max}</td><td class="num">${d.to}/${d.max}</td>
-        <td class="num" style="color:${d.delta > 0 ? COLOR.green : d.delta < 0 ? COLOR.red : "#888"};font-weight:700">${d.delta > 0 ? "▲ +" + d.delta : d.delta < 0 ? "▼ " + d.delta : "—"}</td></tr>`).join("")}
-      <tr style="font-weight:800"><td>TOTAL /92</td><td class="num">${first.total}</td><td class="num">${last.total}</td>
-        <td class="num" style="color:${totalDelta > 0 ? COLOR.green : totalDelta < 0 ? COLOR.red : "#888"}">${totalDelta > 0 ? "▲ +" + totalDelta : totalDelta < 0 ? "▼ " + totalDelta : "—"}</td></tr>
+        <td class="num" style="color:${d.delta > 0 ? COLOR.green : d.delta < 0 ? COLOR.red : COLOR.neutral};font-weight:600">${d.delta > 0 ? "▲ +" + d.delta : d.delta < 0 ? "▼ " + d.delta : "—"}</td></tr>`).join("")}
+      <tr style="font-weight:700"><td>Total /92</td><td class="num">${first.total}</td><td class="num">${last.total}</td>
+        <td class="num" style="color:${totalDelta > 0 ? COLOR.green : totalDelta < 0 ? COLOR.red : COLOR.neutral}">${totalDelta > 0 ? "▲ +" + totalDelta : totalDelta < 0 ? "▼ " + totalDelta : "—"}</td></tr>
     </tbody></table>`;
 }
 
@@ -571,23 +602,26 @@ function renderService() {
   // Delivery types doughnut
   drawChart("svcDelivery", "doughnut", {
     labels: ["Normal", "C-section", "Vacuum"],
-    datasets: [{ data: [normal, csec, vacuum], backgroundColor: ["#2f6fd0", "#e0a106", "#1aab57"] }],
+    datasets: [{ data: [normal, csec, vacuum], backgroundColor: [BLUE.deep, BLUE.mid, BLUE.light], borderColor: "#fff" }],
   }, { plugins: { legend: { position: "bottom" } } });
 
   // Complications breakdown bar
   const compData = COMPLICATIONS.map(([k, label]) => ({ label, v: sumField(rows, k) }));
   drawChart("svcComplications", "bar", {
     labels: compData.map((c) => c.label),
-    datasets: [{ label: "Cases", data: compData.map((c) => c.v), backgroundColor: "#c0556e" }],
-  }, { indexAxis: "y", plugins: { legend: { display: false } }, scales: { x: { ticks: { precision: 0 } } } });
+    datasets: [{ label: "Cases", data: compData.map((c) => c.v), backgroundColor: BLUE.mid, borderRadius: 3 }],
+  }, { indexAxis: "y", plugins: { legend: { display: false } }, scales: {
+    x: { ticks: { precision: 0 } },
+    y: { ticks: { callback(v) { return shortLabel(this.getLabelForValue(v)); } } },
+  } });
 
   // Deliveries by facility
   drawChart("svcByFacility", "bar", {
     labels: reporting.map((r) => `${r.facility_name} (A${r.assessment_no || "?"})`),
     datasets: [
-      { label: "Normal", data: reporting.map((r) => Math.max(num(r.raw.c1) - num(r.raw.c2) - num(r.raw.c3), 0)), backgroundColor: "#2f6fd0" },
-      { label: "C-section", data: reporting.map((r) => num(r.raw.c2)), backgroundColor: "#e0a106" },
-      { label: "Vacuum", data: reporting.map((r) => num(r.raw.c3)), backgroundColor: "#1aab57" },
+      { label: "Normal", data: reporting.map((r) => Math.max(num(r.raw.c1) - num(r.raw.c2) - num(r.raw.c3), 0)), backgroundColor: BLUE.deep },
+      { label: "C-section", data: reporting.map((r) => num(r.raw.c2)), backgroundColor: BLUE.mid },
+      { label: "Vacuum", data: reporting.map((r) => num(r.raw.c3)), backgroundColor: BLUE.light },
     ],
   }, { scales: { x: { stacked: true }, y: { stacked: true, ticks: { precision: 0 } } } });
 
@@ -620,6 +654,10 @@ function renderService() {
 /* ----------------------------------------------------------------------------
  * 12. CHART helper (destroy + recreate)
  * --------------------------------------------------------------------------*/
+function shortLabel(label) {
+  return window.innerWidth <= 720 && label.length > 18 ? label.slice(0, 17) + "…" : label;
+}
+
 function drawChart(canvasId, type, data, options) {
   if (charts[canvasId]) charts[canvasId].destroy();
   const ctx = document.getElementById(canvasId);
@@ -633,20 +671,26 @@ function drawChart(canvasId, type, data, options) {
 /* ----------------------------------------------------------------------------
  * 13. UI state helpers
  * --------------------------------------------------------------------------*/
-function setStatus(t) { $("#status-line").textContent = t; }
+function setStatus(t) {
+  $("#status-line").textContent = t;
+  $("#btn-refresh").classList.toggle("is-loading", t === "Loading…");
+}
 function showLoading() {
   $("#kpis").innerHTML = "";
-  $("#portfolio-table").innerHTML = `<div class="loading"><div class="spinner"></div>Loading live data from Google Sheets…</div>`;
+  $("#portfolio-table").innerHTML = `<div class="loading"><div class="spinner"></div>Loading assessments from the Google Sheet…</div>`;
 }
 function showError(msg) {
-  setStatus("Error");
-  $("#portfolio-table").innerHTML = `<div class="error-box"><b>Unable to load data.</b><br>${esc(msg)}</div>`;
+  setStatus("Couldn't load data");
+  $("#portfolio-table").innerHTML = `<div class="error-box"><b>The assessments couldn't be loaded.</b><br>${esc(msg)}</div>`;
 }
 
 /* ----------------------------------------------------------------------------
  * 14. BOOT
  * --------------------------------------------------------------------------*/
 window.addEventListener("DOMContentLoaded", () => {
+  Chart.defaults.font.family = '"Mukta", system-ui, sans-serif';
+  Chart.defaults.font.size = 13;
+  Chart.defaults.color = COLOR.neutral;
   initFilters();
   $("#btn-refresh").addEventListener("click", loadData);
   $("#sc-picker").addEventListener("change", renderScorecard);
