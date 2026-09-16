@@ -26,19 +26,26 @@ const DOMAINS = [
   { id: "d13", short: "D13 — Infection Prevention",    q: qr(85, 92),  max: 8,  green: 8,  yellow: 5 },
 ];
 
+// `legacy`: Part A columns that scored the SF before Part B items were asked manually
+// (form version 2026.09.16); used only for submissions that lack the manual columns.
 const SIGNAL_FUNCTIONS = [
-  { id: "sf1", name: "SF1 — Parenteral Antibiotics",        q: ["q37", "q67", "q68"], max: 3 },
-  { id: "sf2", name: "SF2 — Uterotonic Drugs",              q: ["q37", "q65", "q71"], max: 3 },
+  { id: "sf1", name: "SF1 — Parenteral Antibiotics",        q: ["sf1_syr", "sf1_amp", "sf1_gen"], legacy: ["q37", "q67", "q68"], max: 3 },
+  { id: "sf2", name: "SF2 — Uterotonic Drugs",              q: ["sf2_syr", "sf2_oxy", "sf2_erg"], legacy: ["q37", "q65", "q71"], max: 3 },
   { id: "sf3", name: "SF3 — Parenteral Anticonvulsants",    q: ["sf3_syr", "sf3_can", "sf3_flu", "sf3_mg", "sf3_ca"], max: 5 },
-  { id: "sf4", name: "SF4 — Manual Removal of Placenta",    q: ["q34", "q44", "q67", "q69"], max: 4 },
-  { id: "sf5", name: "SF5 — Removal of Retained Products",  q: ["q35", "q49", "q64"], max: 3 },
-  { id: "sf6", name: "SF6 — Assisted Vaginal Delivery",     q: ["q33", "q50"], max: 2 },
-  { id: "sf7", name: "SF7 — Newborn Resuscitation",         q: ["q36", "q52"], max: 2 },
+  { id: "sf4", name: "SF4 — Manual Removal of Placenta",    q: ["sf4_staff", "sf4_glove", "sf4_amp", "sf4_diaz"], legacy: ["q34", "q44", "q67", "q69"], max: 4 },
+  { id: "sf5", name: "SF5 — Removal of Retained Products",  q: ["sf5_staff", "sf5_mva", "sf5_xylo"], legacy: ["q35", "q49", "q64"], max: 3 },
+  { id: "sf6", name: "SF6 — Assisted Vaginal Delivery",     q: ["sf6_staff", "sf6_vac"], legacy: ["q33", "q50"], max: 2 },
+  { id: "sf7", name: "SF7 — Newborn Resuscitation",         q: ["sf7_staff", "sf7_ambu"], legacy: ["q36", "q52"], max: 2 },
 ];
 const SF_TOTAL_MAX = SIGNAL_FUNCTIONS.reduce((s, f) => s + f.max, 0); // 22
 const TOTAL_MAX = DOMAINS.reduce((s, d) => s + d.max, 0);             // 92
 
 const FACILITY_TYPES = { hp: "Health Post", phcc: "PHCC", birthing_centre: "Birthing Centre", hospital: "Hospital" };
+// Keys are normalized district values; older submissions used free text, hence the spelling variants.
+const DISTRICTS = {
+  panchthar: "Panchthar", sankhuwasabha: "Sankhuwasabha",
+  terhathum: "Terhathum", terathum: "Terhathum", tehrathum: "Terhathum",
+};
 
 // Short labels for every question (used in the gap-analysis view).
 const QLABELS = {
@@ -114,7 +121,8 @@ function computeRow(r) {
   const totalPct = total / TOTAL_MAX;
 
   const sfs = SIGNAL_FUNCTIONS.map((f) => {
-    const score = f.q.reduce((s, q) => s + num(r[q]), 0);
+    const cols = f.legacy && !f.q.some((q) => hasVal(r[q])) ? f.legacy : f.q;
+    const score = cols.reduce((s, q) => s + num(r[q]), 0);
     return { ...f, score, status: score >= f.max ? "green" : "red" };
   });
   const sfTotal = sfs.reduce((s, f) => s + f.score, 0);
@@ -130,7 +138,10 @@ function computeRow(r) {
     raw: r,
     facility_name: (r.facility_name || "").trim(),
     key: norm(r.facility_name),
-    district: (r.district || "").trim(),
+    district_key: norm(r.district),
+    district: norm(r.district) === "other"
+      ? (r.district_other || "").trim() || "Other"
+      : DISTRICTS[norm(r.district)] || (r.district || "").trim(),
     palika: (r.palika || "").trim(),
     facility_type: r.facility_type || "",
     facility_type_label: FACILITY_TYPES[r.facility_type] || r.facility_type || "—",
@@ -158,7 +169,8 @@ function loadData() {
         const rows = res.data
           .map(remapRow)
           .filter((r) => hasVal(r.facility_name))
-          .map(computeRow);
+          .map(computeRow)
+          .filter(inDistrictScope);
         STATE.rows = rows;
         STATE.lastUpdated = new Date();
         applyFilters();        // sets STATE.filtered + populates filter dropdowns
@@ -173,6 +185,11 @@ function loadData() {
       "Check that the sheet is shared (link-viewer or Published to web) and the URL in config.js is correct. " +
       "Details: " + (err.message || err)),
   });
+}
+
+function inDistrictScope(row) {
+  const { include, exclude = [] } = DISTRICT_SCOPE;
+  return include ? include.includes(row.district_key) : !exclude.includes(row.district_key);
 }
 
 // Strip "group/name" header prefixes -> last segment becomes the field name.
@@ -235,7 +252,10 @@ function renderCurrentView() {
   const v = currentView();
   $$("nav.tabs a").forEach((a) => a.classList.toggle("active", a.dataset.view === v));
   $$(".view").forEach((el) => el.classList.toggle("active", el.id === "view-" + v));
-  if (!STATE.rows.length) return;
+  if (!STATE.rows.length) {
+    $("#portfolio-table").innerHTML = `<div class="empty">No assessments submitted for this district yet.</div>`;
+    return;
+  }
   decorateTypeFilter();
   ({ portfolio: renderPortfolio, scorecard: renderScorecard, trends: renderTrends, service: renderService }[v])();
 }

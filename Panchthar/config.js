@@ -13,17 +13,15 @@
  *  B) gviz endpoint  (works if the sheet is shared "Anyone with the link -> Viewer")
  *     Uses the normal sheet ID. This is the default below so the dashboard
  *     works out of the box once link-sharing is on.
- *
- * TODO (Panchthar): no Google Sheet exists yet for this district. Once the
- * KoboToolbox form is submitting to a sheet, replace SHEET_ID below with the
- * real sheet ID (from its URL: https://docs.google.com/spreadsheets/d/<ID>/edit)
- * and remove this TODO block.
  * ===========================================================================*/
 
-const SHEET_ID = "REPLACE_WITH_PANCHTHAR_SHEET_ID";
+const SHEET_ID = "1bYzsn8NxUc1tpyAipQd23uenlgm2CrWD_pG58A-K4Uw";
 const SHEET_GID = "0";
 
 // Default: gviz CSV (option B). Replace with your "Publish to web" URL (option A)
 // if you prefer — just assign it to SHEET_CSV_URL.
 const SHEET_CSV_URL =
   `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
+
+// One Kobo project feeds every district; this site shows Panchthar only.
+const DISTRICT_SCOPE = { include: ["panchthar"] };

@@ -22,3 +22,7 @@ const SHEET_GID = "0";
 // if you prefer — just assign it to SHEET_CSV_URL.
 const SHEET_CSV_URL =
   `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
+
+// One Kobo project feeds every district. Panchthar has its own site (Panchthar/),
+// so this site shows everything else, including older free-text district entries.
+const DISTRICT_SCOPE = { exclude: ["panchthar"] };

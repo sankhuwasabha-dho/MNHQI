@@ -16,7 +16,7 @@ All scores and 🟢/🟡/🔴 traffic lights are **recomputed in the browser** f
 | `app.js` | Data fetch, CSV parsing, scoring config, all four views |
 | `styles.css` | Layout + traffic-light theming |
 | `config.js` | **The one file you edit** — the Google Sheet CSV URL |
-| `MNH_QI_Tool_XLSFor.xlsx` | The source XLSForm (reference only) |
+| `../MNH_QI_Tool_XLSFor.xlsx` | The source XLSForm, shared by all districts (reference only) |
 
 ---
 
