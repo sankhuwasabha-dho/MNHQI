@@ -14,7 +14,7 @@ One repo, one Kobo form, one Google Sheet. Each district has its own folder hold
 
 | Path | Purpose |
 |---|---|
-| `index.html` | Landing page linking to every district dashboard |
+| `index.html` | Redirects the main address to the Sankhuwasabha dashboard |
 | `Districts/` | One sub-folder per district dashboard, plus `districts.csv` (district name, folder, dashboard link) |
 | `Districts/Sankhuwasabha/` | Sankhuwasabha dashboard (GitHub Pages: `/Districts/Sankhuwasabha/`) |
 | `Districts/Panchthar/`, `Morang/`, `Sunsari/`, `Bhojpur/` | District dashboards (each its own Vercel project, deployed with `vercel deploy --prod` from the folder) |
@@ -57,7 +57,7 @@ A static page using `fetch()` must be served over HTTP (not opened as a `file://
 ```bash
 # from the repo root
 python -m http.server 8000
-# then open http://localhost:8000/ (landing page) or http://localhost:8000/Districts/Sankhuwasabha/
+# then open http://localhost:8000/ (opens Districts/Sankhuwasabha/)
 ```
 
 Click **↻ Refresh** any time to pull the latest submissions.
@@ -77,7 +77,7 @@ Click **↻ Refresh** any time to pull the latest submissions.
    ```
 2. On GitHub: **Settings → Pages → Build and deployment → Source: Deploy from a branch**, select
    **Branch: `main`, Folder: `/ (root)`**, then **Save**.
-3. Wait ~1 minute; the landing page is at `https://<you>.github.io/<repo>/` and Sankhuwasabha at `https://<you>.github.io/<repo>/Districts/Sankhuwasabha/`.
+3. Wait ~1 minute; `https://<you>.github.io/<repo>/` opens the Sankhuwasabha dashboard (served from `/Districts/Sankhuwasabha/`).
 
 New KoboToolbox submissions flow into the sheet automatically; visitors see them after a page load or **Refresh**.
 
