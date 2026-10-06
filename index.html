@@ -4,191 +4,66 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0B3A78" />
-  <title>Health Office, Sankhuwasabha — MNHQI Dashboard</title>
+  <title>MNHQI Dashboards — District Health Offices</title>
   <link rel="icon" type="image/png" href="nepal-emblem.png" />
-
-  <!-- Type: Noto Serif (+ Devanagari) for the letterhead, Mukta for text, IBM Plex Mono for figures -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Mukta:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@600;700&family=Noto+Serif:wght@600;700&display=swap" rel="stylesheet">
-
-  <!-- Leaflet (map) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@600;700&family=Noto+Serif:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --flag-blue: #0B3A78; --flag-blue-deep: #072A58; --flag-blue-tint: #E7EEF7;
+      --ink: #17212B; --slate: #5B6878; --paper: #F4F6F9; --panel: #FFFFFF; --line: #DCE2EA;
+      --font-ui: "Mukta", "Noto Sans Devanagari", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-display: "Noto Serif", "Noto Serif Devanagari", Georgia, serif;
+      --gutter: 24px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-ui); line-height: 1.5; }
+    a:focus-visible { outline: 3px solid var(--flag-blue); outline-offset: 2px; }
+    header { background: var(--flag-blue); color: #fff; border-bottom: 4px solid var(--flag-blue-deep); }
+    .lh-inner { max-width: 960px; margin: 0 auto; padding: 18px var(--gutter); display: flex; align-items: center; gap: 16px; }
+    .emblem { flex: none; width: 60px; height: 60px; object-fit: contain; }
+    .tier { font-size: .8rem; color: rgba(255,255,255,.8); line-height: 1.35; }
+    h1 { font-family: var(--font-display); font-size: 1.6rem; line-height: 1.3; margin: 2px 0 0; }
+    main { max-width: 960px; margin: 0 auto; padding: 28px var(--gutter) 48px; }
+    .lead { color: var(--slate); margin: 0 0 22px; max-width: 62ch; }
+    .grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+    .card {
+      display: block; height: 100%; padding: 18px 20px; text-decoration: none; color: inherit;
+      background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--flag-blue); border-radius: 10px;
+    }
+    .card:hover { background: var(--flag-blue-tint); }
+    .card .ne { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; color: var(--flag-blue-deep); }
+    .card .en { color: var(--slate); font-size: .9rem; }
+    .card .go { display: inline-block; margin-top: 10px; font-weight: 600; font-size: .9rem; color: var(--flag-blue); }
+    footer { margin-top: 28px; color: var(--slate); font-size: .85rem; }
+    @media (max-width: 640px) {
+      :root { --gutter: 16px; }
+      h1 { font-size: 1.22rem; }
+      .emblem { width: 48px; height: 48px; }
+    }
+  </style>
 </head>
 <body>
-  <header class="letterhead">
+  <header>
     <div class="lh-inner">
       <img class="emblem" src="nepal-emblem.png" alt="Coat of arms of Nepal" width="60" height="60" />
-      <div class="office-id" lang="ne">
-        <div class="office-tier">कोशी प्रदेश सरकार</div>
-        <div class="office-tier">स्वास्थ्य मन्त्रालय · स्वास्थ्य निर्देशनालय</div>
-        <h1>स्वास्थ्य कार्यालय संखुवासभा</h1>
-        <div class="office-loc">खाँदबारी, संखुवासभा</div>
-      </div>
-      <div class="lh-actions">
-        <div class="status-line" id="status-line" role="status">Loading…</div>
-        <button class="refresh" id="btn-refresh" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>
-          <span>Refresh</span>
-        </button>
+      <div lang="ne">
+        <div class="tier">कोशी प्रदेश सरकार · स्वास्थ्य मन्त्रालय · स्वास्थ्य निर्देशनालय</div>
+        <h1>MNHQI ड्यासबोर्ड</h1>
       </div>
     </div>
-    <div class="lh-sub">MNHQI dashboard · Maternal &amp; newborn health quality improvement in birthing centres</div>
   </header>
-
-  <nav class="tabs" aria-label="Dashboard views">
-    <div class="tabs-inner">
-      <a href="#portfolio" data-view="portfolio" class="active">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>
-        <span>Portfolio</span>
-      </a>
-      <a href="#scorecard" data-view="scorecard">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5h6M9 12l2 2 4-4"/></svg>
-        <span class="t-full">Facility scorecard</span><span class="t-short">Scorecard</span>
-      </a>
-      <a href="#trends" data-view="trends">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 17l5-5 4 3 8-8"/><path d="M15 7h5.5v5.5"/></svg>
-        <span>Trends</span>
-      </a>
-      <a href="#service" data-view="service">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg>
-        <span class="t-full">Service data</span><span class="t-short">Service</span>
-      </a>
-    </div>
-  </nav>
-
   <main>
-    <!-- Shared filters -->
-    <details class="panel filters" id="filters" open>
-      <summary>Filters <span class="filter-count" id="filter-count"></span></summary>
-      <div class="filter-grid">
-        <div class="field"><label for="f-district">District</label><select id="f-district"></select></div>
-        <div class="field"><label for="f-palika">Local level (Palika)</label><select id="f-palika"></select></div>
-        <div class="field"><label for="f-type">Facility type</label><select id="f-type"></select></div>
-        <div class="field"><label for="f-assessment">Assessment</label><select id="f-assessment"></select></div>
-        <button class="clear" id="f-clear" type="button">Clear filters</button>
-      </div>
-    </details>
-
-    <div class="panel empty no-data-msg">
-      <strong>No assessments submitted for this district yet</strong>
-      Assessments appear here after they are submitted in KoboToolbox. Use Refresh to check again.
-    </div>
-
-    <!-- VIEW: PORTFOLIO -->
-    <section class="view active" id="view-portfolio">
-      <div class="kpis" id="kpis"></div>
-      <div class="grid-2">
-        <div class="panel">
-          <h2 class="section">All assessments</h2>
-          <div id="portfolio-table"></div>
-        </div>
-        <div class="panel">
-          <h2 class="section">Facility map</h2>
-          <div id="map"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- VIEW: SCORECARD -->
-    <section class="view" id="view-scorecard">
-      <div class="picker">
-        <div class="field">
-          <label class="micro-label" for="sc-picker">Facility and assessment</label>
-          <select id="sc-picker"></select>
-        </div>
-      </div>
-      <div class="panel facility-head" id="sc-head"></div>
-      <div class="grid-2">
-        <div class="panel">
-          <h2 class="section">Part A — Domain scorecard <span id="sc-partA-score" class="part-score"></span></h2>
-          <div id="sc-domains"></div>
-        </div>
-        <div class="panel">
-          <h2 class="section">Domain profile</h2>
-          <div class="chart-wrap tall"><canvas id="scRadar"></canvas></div>
-        </div>
-      </div>
-      <div class="panel">
-        <h2 class="section">Part B — BEONC signal functions <span id="sc-partB-score" class="part-score"></span></h2>
-        <div class="sf-grid" id="sc-sf"></div>
-        <div id="sc-sf-total"></div>
-      </div>
-      <div class="panel">
-        <h2 class="section">Part C — Monthly service data</h2>
-        <div class="muted" id="sc-partc-month" style="margin-bottom:10px"></div>
-        <div class="statgrid" id="sc-partc"></div>
-      </div>
-      <div class="panel">
-        <h2 class="section">Action plan</h2>
-        <div id="sc-actions"></div>
-      </div>
-    </section>
-
-    <!-- VIEW: TRENDS -->
-    <section class="view" id="view-trends">
-      <div class="picker">
-        <div class="field">
-          <label class="micro-label" for="tr-picker">Facility</label>
-          <select id="tr-picker"></select>
-        </div>
-      </div>
-      <div id="tr-note"></div>
-      <div class="grid-2">
-        <div class="panel">
-          <h2 class="section">Overall quality over time</h2>
-          <div class="chart-wrap"><canvas id="trTotal"></canvas></div>
-        </div>
-        <div class="panel">
-          <h2 class="section">Domain scores by assessment</h2>
-          <div class="chart-wrap"><canvas id="trDomains"></canvas></div>
-        </div>
-      </div>
-      <div class="panel" id="tr-deltas"></div>
-    </section>
-
-    <!-- VIEW: SERVICE DATA & OUTCOMES (Part C) -->
-    <section class="view" id="view-service">
-      <div class="panel empty" id="svc-empty" style="display:none"><strong>No service data for these filters</strong>Part C is filled in the monthly section of the assessment form.</div>
-      <div id="svc-body">
-        <div id="svc-note"></div>
-        <div class="kpis" id="svc-kpis"></div>
-        <div class="grid-2">
-          <div class="panel">
-            <h2 class="section">Delivery types</h2>
-            <div class="chart-wrap"><canvas id="svcDelivery"></canvas></div>
-          </div>
-          <div class="panel">
-            <h2 class="section">Obstetric complications managed</h2>
-            <div class="chart-wrap"><canvas id="svcComplications"></canvas></div>
-          </div>
-        </div>
-        <div class="panel">
-          <h2 class="section">Deliveries by facility</h2>
-          <div class="chart-wrap"><canvas id="svcByFacility"></canvas></div>
-        </div>
-        <div class="panel">
-          <h2 class="section">Adverse outcomes (totals across selected facilities)</h2>
-          <div class="statgrid" id="svc-outcomes"></div>
-        </div>
-        <div class="panel">
-          <h2 class="section">Service data by facility</h2>
-          <div id="svc-table"></div>
-        </div>
-      </div>
-    </section>
+    <p class="lead">Maternal &amp; newborn health quality improvement (MNH QI) dashboards for birthing centres. Choose a district health office to open its dashboard.</p>
+    <ul class="grid">
+      <li><a class="card" href="Sankhuwasabha/" lang="ne"><div class="ne">स्वास्थ्य कार्यालय संखुवासभा</div><div class="en" lang="en">Sankhuwasabha</div><span class="go" lang="en">Open dashboard →</span></a></li>
+      <li><a class="card" href="https://mnhqi-panchthar.vercel.app" lang="ne"><div class="ne">स्वास्थ्य कार्यालय पाँचथर</div><div class="en" lang="en">Panchthar</div><span class="go" lang="en">Open dashboard →</span></a></li>
+      <li><a class="card" href="https://mnhqi-morang.vercel.app" lang="ne"><div class="ne">स्वास्थ्य कार्यालय मोरङ</div><div class="en" lang="en">Morang</div><span class="go" lang="en">Open dashboard →</span></a></li>
+      <li><a class="card" href="https://mnhqi-sunsari.vercel.app" lang="ne"><div class="ne">स्वास्थ्य कार्यालय सुनसरी</div><div class="en" lang="en">Sunsari</div><span class="go" lang="en">Open dashboard →</span></a></li>
+      <li><a class="card" href="https://mnhqi-bhojpur.vercel.app" lang="ne"><div class="ne">स्वास्थ्य कार्यालय भोजपुर</div><div class="en" lang="en">Bhojpur</div><span class="go" lang="en">Open dashboard →</span></a></li>
+    </ul>
+    <footer>All districts share one KoboToolbox form and one Google Sheet; each dashboard shows only its own district's assessments.</footer>
   </main>
-
-  <!-- Libraries -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-  <!-- App -->
-  <script src="config.js"></script>
-  <script src="app.js"></script>
 </body>
 </html>

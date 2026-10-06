@@ -9,14 +9,17 @@ A zero-build, static web dashboard for the **Maternal & Newborn Health (MNH) Rea
 
 All scores and 🟢/🟡/🔴 traffic lights are **recomputed in the browser** from the raw `0/1` answers, so the dashboard does not depend on the (emoji-mangled) score columns in the export.
 
-## Files
-| File | Purpose |
+## Repository layout
+One repo, one Kobo form, one Google Sheet. Each district has its own folder holding a copy of the same dashboard, filtered to that district in its own `config.js` (`DISTRICT_SCOPE`).
+
+| Path | Purpose |
 |---|---|
-| `index.html` | Page markup + CDN libraries (Leaflet, Chart.js, PapaParse) |
-| `app.js` | Data fetch, CSV parsing, scoring config, all four views |
-| `styles.css` | Layout + traffic-light theming |
-| `config.js` | **The one file you edit** — the Google Sheet CSV URL |
-| `MNH_QI_Tool_XLSFor.xlsx` | The source XLSForm (reference only) |
+| `index.html` | Landing page linking to every district dashboard |
+| `Sankhuwasabha/` | Sankhuwasabha dashboard (GitHub Pages: `/Sankhuwasabha/`) |
+| `Panchthar/`, `Morang/`, `Sunsari/`, `Bhojpur/` | District dashboards (each its own Vercel project, deployed with `vercel deploy --prod` from the folder) |
+| `MNH_QI_Tool_XLSFor.xlsx` | The shared XLSForm (reference; upload to Kobo) |
+
+Inside each district folder: `index.html` (markup), `app.js` (data, scoring, views), `styles.css`, `config.js` (**the file you edit**: Google Sheet CSV URL and district scope), `nepal-emblem.png`. Keep `app.js` and `styles.css` identical across all district folders.
 
 ---
 
@@ -51,9 +54,9 @@ Pick **one** option and set `SHEET_CSV_URL` in `config.js` accordingly.
 A static page using `fetch()` must be served over HTTP (not opened as a `file://` path).
 
 ```bash
-# from this folder
+# from the repo root
 python -m http.server 8000
-# then open http://localhost:8000/
+# then open http://localhost:8000/ (landing page) or http://localhost:8000/Sankhuwasabha/
 ```
 
 Click **↻ Refresh** any time to pull the latest submissions.
@@ -62,10 +65,10 @@ Click **↻ Refresh** any time to pull the latest submissions.
 
 ## 3. Deploy to GitHub Pages
 
-1. Create a GitHub repo and push these files to the **root** (so `index.html` is at the top level):
+1. Create a GitHub repo and push this repo as it is (the landing `index.html` stays at the top level; each district dashboard is served from its sub-folder):
    ```bash
    git init
-   git add index.html app.js styles.css config.js README.md
+   git add .
    git commit -m "MNH QI dashboard"
    git branch -M main
    git remote add origin https://github.com/<you>/<repo>.git
@@ -73,7 +76,7 @@ Click **↻ Refresh** any time to pull the latest submissions.
    ```
 2. On GitHub: **Settings → Pages → Build and deployment → Source: Deploy from a branch**, select
    **Branch: `main`, Folder: `/ (root)`**, then **Save**.
-3. Wait ~1 minute; your dashboard is live at `https://<you>.github.io/<repo>/`.
+3. Wait ~1 minute; the landing page is at `https://<you>.github.io/<repo>/` and Sankhuwasabha at `https://<you>.github.io/<repo>/Sankhuwasabha/`.
 
 New KoboToolbox submissions flow into the sheet automatically; visitors see them after a page load or **Refresh**.
 
