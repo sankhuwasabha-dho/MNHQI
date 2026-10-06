@@ -179,34 +179,63 @@ function computeRow(r) {
 /* ----------------------------------------------------------------------------
  * 5. FETCH + PARSE
  * --------------------------------------------------------------------------*/
-function loadData() {
+// Google sometimes answers with only the first rows of the sheet (e.g. 18 of 24), so a
+// single response can't be trusted. Fetch again until an answer confirms the largest
+// row count seen, keeping the most complete copy.
+const MAX_FETCHES = 6;
+let loadSeq = 0;
+
+function fetchSheet() {
+  return new Promise((resolve, reject) => {
+    Papa.parse(SHEET_CSV_URL + "&_cb=" + Date.now() + Math.random().toString(36).slice(2), {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: (res) => resolve(res.data),
+      error: (err) => reject(err),
+    });
+  });
+}
+
+async function fetchCompleteSheet() {
+  let best = await fetchSheet();
+  for (let i = 1; i < MAX_FETCHES; i++) {
+    const next = await fetchSheet();
+    if (next.length === best.length) break;
+    if (next.length > best.length) best = next;
+  }
+  return best;
+}
+
+async function loadData() {
+  const seq = ++loadSeq; // a newer Refresh click supersedes this load
   setStatus("Loading…");
   showLoading();
-  Papa.parse(SHEET_CSV_URL + "&_cb=" + Date.now(), {
-    download: true,
-    header: true,
-    skipEmptyLines: true,
-    complete: (res) => {
-      try {
-        const rows = res.data
-          .map(remapRow)
-          .filter((r) => hasVal(r.facility_name))
-          .map(computeRow)
-          .filter(inDistrictScope);
-        STATE.rows = rows;
-        STATE.lastUpdated = new Date();
-        applyFilters();        // sets STATE.filtered + populates filter dropdowns
-        buildFacilityPickers();
-        renderCurrentView();
-        setStatus(`${rows.length} assessment${rows.length === 1 ? "" : "s"} · updated ${STATE.lastUpdated.toLocaleTimeString()}`);
-      } catch (e) {
-        showError(e.message || String(e));
-      }
-    },
-    error: (err) => showError("Could not load the Google Sheet CSV. " +
+  let data;
+  try {
+    data = await fetchCompleteSheet();
+  } catch (err) {
+    if (seq === loadSeq) showError("Could not load the Google Sheet CSV. " +
       "Check that the sheet is shared (link-viewer or Published to web) and the URL in config.js is correct. " +
-      "Details: " + (err.message || err)),
-  });
+      "Details: " + (err.message || err));
+    return;
+  }
+  if (seq !== loadSeq) return;
+  try {
+    const rows = data
+      .map(remapRow)
+      .filter((r) => hasVal(r.facility_name))
+      .map(computeRow)
+      .filter(inDistrictScope);
+    STATE.rows = rows;
+    STATE.lastUpdated = new Date();
+    applyFilters();        // sets STATE.filtered + populates filter dropdowns
+    buildFacilityPickers();
+    renderCurrentView();
+    setStatus(`${rows.length} assessment${rows.length === 1 ? "" : "s"} · updated ${STATE.lastUpdated.toLocaleTimeString()}`);
+  } catch (e) {
+    showError(e.message || String(e));
+  }
 }
 
 function inDistrictScope(row) {
