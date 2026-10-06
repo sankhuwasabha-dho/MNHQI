@@ -45,6 +45,7 @@ const FACILITY_TYPES = { hp: "Health Post", phcc: "PHCC", birthing_centre: "Birt
 const DISTRICTS = {
   panchthar: "Panchthar", sankhuwasabha: "Sankhuwasabha",
   terhathum: "Terhathum", terathum: "Terhathum", tehrathum: "Terhathum",
+  morang: "Morang", sunsari: "Sunsari", bhojpur: "Bhojpur",
 };
 
 // Short labels for every question (used in the gap-analysis view).
