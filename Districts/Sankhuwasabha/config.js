@@ -23,7 +23,8 @@ const SHEET_GID = "0";
 const SHEET_CSV_URL =
   `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
 
-// One Kobo project feeds every district. Panchthar, Morang, Sunsari and Bhojpur each
-// have their own site (sub-folders), so this site shows everything else, including
-// older free-text district entries.
-const DISTRICT_SCOPE = { exclude: ["panchthar", "morang", "sunsari", "bhojpur"] };
+// One Kobo project feeds every district. Panchthar, Morang, Sunsari, Bhojpur, Dhankuta and
+// Terhathum each have their own site (sub-folders), so this site shows everything else,
+// including older free-text district entries.
+const DISTRICT_SCOPE = { exclude: ["panchthar", "morang", "sunsari", "bhojpur", "dhankuta",
+  "terhathum", "tehrathum", "terathum"] };

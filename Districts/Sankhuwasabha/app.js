@@ -46,6 +46,8 @@ const DISTRICTS = {
   panchthar: "Panchthar", sankhuwasabha: "Sankhuwasabha",
   terhathum: "Terhathum", terathum: "Terhathum", tehrathum: "Terhathum",
   morang: "Morang", sunsari: "Sunsari", bhojpur: "Bhojpur",
+  dhankuta: "Dhankuta", ilam: "Ilam", jhapa: "Jhapa", khotang: "Khotang",
+  okhaldhunga: "Okhaldhunga", solukhumbu: "Solukhumbu", taplejung: "Taplejung", udayapur: "Udayapur",
 };
 
 // Short labels for every question (used in the gap-analysis view).
