@@ -38,7 +38,7 @@ Pick **one** option and set `SHEET_CSV_URL` in `config.js` accordingly.
 ### Option B — Link sharing + gviz (default in `config.js`)
 1. **Share → General access → Anyone with the link → Viewer**.
 2. That's it — the default `config.js` already builds the gviz CSV URL from the sheet ID
-   (`1bYzsn8NxUc1tpyAipQd23uenlgm2CrWD_pG58A-K4Uw`). If your sheet ID or tab (gid) differs, edit
+   (`125TqseT3S_u9OEqk3IoAyi-LIUISnX_6v5H0MPvwIck`). If your sheet ID or tab (gid) differs, edit
    `SHEET_ID` / `SHEET_GID` at the top of `config.js`.
 
 > Both endpoints send `Access-Control-Allow-Origin: *`, so the page can fetch them from any host.
