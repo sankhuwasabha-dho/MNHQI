@@ -17,7 +17,7 @@ One repo, one Kobo form, one Google Sheet. Each district has its own folder hold
 | `index.html` | Redirects the main address to the Sankhuwasabha dashboard |
 | `Districts/` | One sub-folder per district dashboard, plus `districts.csv` (district name, folder, dashboard link) |
 | `Districts/Sankhuwasabha/` | Sankhuwasabha dashboard (GitHub Pages: `/Districts/Sankhuwasabha/`) |
-| `Districts/Panchthar/`, `Morang/`, `Sunsari/`, `Dhankuta/`, `Terhathum/` | District dashboards (each its own Vercel project, deployed with `vercel deploy --prod` from the folder) |
+| `Districts/Panchthar/`, `Morang/`, `Sunsari/`, `Bhojpur/`, `Dhankuta/`, `Terhathum/` | District dashboards (each its own Vercel project, deployed with `vercel deploy --prod` from the folder) |
 | `MNH_QI_Tool_XLSFor.xlsx` | The shared XLSForm (reference; upload to Kobo) |
 
 Inside each district folder: `index.html` (markup), `app.js` (data, scoring, views), `styles.css`, `config.js` (**the file you edit**: Google Sheet CSV URL and district scope), `nepal-emblem.png`. Keep `app.js` and `styles.css` identical across all district folders.
